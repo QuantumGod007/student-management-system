@@ -147,7 +147,7 @@ MongoDB enforces the unique indexes at database level, while validation middlewa
 ```json
 {
   "_id": "672f1c2b8e1a4d4f9c0a12ab",
-  "studentId": "MTA2023CS001",
+  "studentId": "2023CS001",
   "name": "Aarav Patil",
   "email": "aarav.patil@mitaoe.ac.in",
   "phone": "9876543210",
@@ -196,7 +196,7 @@ MongoDB enforces the unique indexes at database level, while validation middlewa
 
 ```json
 {
-  "studentId": "MTA2023CS001",
+  "studentId": "2023CS001",
   "name": "Aarav Patil",
   "email": "aarav.patil@mitaoe.ac.in",
   "phone": "9876543210",
@@ -211,7 +211,7 @@ MongoDB enforces the unique indexes at database level, while validation middlewa
 **GET `/api/students`** → `200 OK`
 
 ```json
-{ "success": true, "count": 1, "data": [{ "_id": "672f...", "studentId": "MTA2023CS001", "...": "..." }] }
+{ "success": true, "count": 1, "data": [{ "_id": "672f...", "studentId": "2023CS001", "...": "..." }] }
 ```
 
 **GET `/api/students/672f1c2b8e1a4d4f9c0a12ab`** → `200 OK` with the document; unknown id → `404 Not Found`.
@@ -365,41 +365,40 @@ Screenshots of the application for this report are in the `screenshots/` folder 
 
 ## 10. Deployment Details
 
-**Target platform:** Render (Node web service for the API, static site for the dashboard) with **MongoDB Atlas** as the managed database. This matches the platform the repository already used.
+**Platform:** **Vercel** (two projects — an Express API Function and a static React build) with **MongoDB Atlas** as the managed database.
 
-| Setting | API service | Frontend static site |
+| Setting | API project (`server`) | Dashboard project (`client`) |
 | --- | --- | --- |
 | Root directory | `server` | `client` |
-| Build command | `npm install` | `npm install && npm run build` |
-| Start command | `npm start` | — (publish `dist`) |
+| Build | `@vercel/node` function (routed by `server/vercel.json`) | Vite build, output `dist` |
+| Runtime entry | `server.js` exports the Express app; `app.listen()` is skipped when `process.env.VERCEL` is set | static files |
 | Variables | `MONGO_URI`, `NODE_ENV=production`, `CLIENT_ORIGIN` | `VITE_API_URL=https://<api>/api` |
-| Port | Provided by Render via `process.env.PORT`; server binds `0.0.0.0` | — |
+| Database access | Atlas Network Access must allow `0.0.0.0/0`, because serverless egress IPs are dynamic | — |
 
-Required Atlas step: create a database user, allow connections from the hosting platform, and add the database name to the connection string.
+Because each Function invocation may run on a fresh instance, the Mongoose connection is cached in `server/config/db.js` and opened lazily (also from the health check) rather than only at boot.
 
-Verification steps after deploying:
-
-1. `GET https://<api>/api/health` returns `200` with `"database": "connected"`.
-2. The Postman collection passes with the **Deployed** environment.
-3. The dashboard URL loads records from the public API (browser console free of CORS errors).
-
-**Deployment status:** the code, scripts and configuration required for deployment are complete; the public deployment has **not** been performed or verified at the time this report was prepared. No deployed URL or deployment screenshot is claimed here. After deploying, record the URLs below and attach the Postman run output.
+**Deployment status: completed and verified.**
 
 | Item | Value |
 | --- | --- |
-| Frontend URL | _to be filled after deployment_ |
-| API base URL | _to be filled after deployment_ |
-| Health check result | _to be filled after deployment_ |
-| Postman (deployed) result | _to be filled after deployment_ |
+| Frontend URL | https://student-management-dashboard-anvith320-gmailcoms-projects.vercel.app |
+| API base URL | https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api |
+| Source repository | https://github.com/QuantumGod007/student-management-system |
+| Health check | `200` with `"status":"ok","database":"connected"` |
+| Dashboard | loaded 10 records from the public API, dashboard console free of errors |
+| CORS | dashboard origin allowed (`204`), unknown origin rejected (`403`) |
+| Postman (deployed) | 13 requests, 35 assertions, **0 failures**, average response 423 ms |
+
+The account suffix in the Vercel hostnames is required because the plain `student-management-api.vercel.app` and `student-management-dashboard.vercel.app` hostnames belong to other Vercel accounts. Deployment Protection was switched off on both projects so the URLs are publicly reachable.
 
 ---
 
 ## 11. Result
 
-The Student Management REST API was implemented and executed successfully. All five CRUD operations work against a persistent MongoDB database with correct HTTP status codes; invalid and duplicate input is rejected with field-level messages; a React dashboard performs every operation through the API; and the complete Postman collection passed (13 requests, 35 assertions, 0 failures) against the locally running API. Deployment configuration and instructions are ready, and public deployment remains to be carried out and verified.
+The Student Management REST API was implemented and executed successfully. All five CRUD operations work against a persistent MongoDB database with correct HTTP status codes; invalid and duplicate input is rejected with field-level messages; a React dashboard performs every operation through the API; and the complete Postman collection passed (13 requests, 35 assertions, 0 failures) against the locally running API and again against the public deployment. The application is deployed on Vercel (Express API Function + React dashboard) with a MongoDB Atlas database, and the public URL was tested: the health check reports the database as connected, CORS accepts only the dashboard origin, and the dashboard loads live records from the deployed API.
 
 ---
 
 ## 12. Conclusion
 
-The practical demonstrates how a REST API is designed around a resource, validated at multiple layers, and connected to a real database. Separating routes, controllers, models and middleware kept the code readable and made error handling consistent, while environment-based configuration kept credentials out of source control. Testing with Postman — including negative cases — showed that validation and differentiation between `200`, `201`, `400` and `404` responses are as important as the happy path. The project is ready for public deployment; the remaining step is to host it and repeat the same tests against the public URL.
+The practical demonstrates how a REST API is designed around a resource, validated at multiple layers, and connected to a real database. Separating routes, controllers, models and middleware kept the code readable and made error handling consistent, while environment-based configuration kept credentials out of source control. Testing with Postman — including negative cases — showed that validation and differentiation between `200`, `201`, `400` and `404` responses are as important as the happy path. Deploying the same code to Vercel exposed additional concerns that do not appear locally: serverless functions need a cached database connection, the hosting port must not be hard-coded, the database must accept dynamic egress IPs, and the static frontend must know the API URL at build time. Repeating the identical Postman collection against the public URL confirmed that the deployed API behaves the same as the local one.

@@ -4,7 +4,13 @@ A database-backed Student Management System built with the **MERN stack** for **
 
 The project exposes a complete **RESTful CRUD API** for student records, with a React administration dashboard that performs every operation through the API. Data is stored in **MongoDB** through Mongoose; no in-memory arrays are used.
 
-> **Verification status:** all CRUD endpoints, validation rules, database persistence and Postman tests were executed locally against a real MongoDB instance. See [Testing results](#-testing-results). The application has **not** been deployed to a public URL from this codebase yet — the [deployment guide](#-deployment) covers the steps.
+> **Verification status:** all CRUD endpoints, validation rules, database persistence and Postman tests were executed locally **and** against the public deployment, which runs on Vercel with a MongoDB Atlas database. See [Testing results](#-testing-results) and [Deployment](#-deployment-vercel).
+
+| | URL |
+| --- | --- |
+| **Dashboard (live)** | https://student-management-dashboard-anvith320-gmailcoms-projects.vercel.app |
+| **API (live)** | https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api/health |
+| **Source** | https://github.com/QuantumGod007/student-management-system |
 
 ---
 
@@ -309,7 +315,7 @@ Error:
 curl -X POST http://localhost:5001/api/students \
   -H "Content-Type: application/json" \
   -d '{
-    "studentId": "MTA2023CS001",
+    "studentId": "2023CS001",
     "name": "Aarav Patil",
     "email": "aarav.patil@example.edu",
     "phone": "9876543210",
@@ -327,7 +333,7 @@ curl -X POST http://localhost:5001/api/students \
   "message": "Student created successfully",
   "data": {
     "_id": "672f1c2b8e1a4d4f9c0a12ab",
-    "studentId": "MTA2023CS001",
+    "studentId": "2023CS001",
     "name": "Aarav Patil",
     "email": "aarav.patil@example.edu",
     "phone": "9876543210",
@@ -353,7 +359,7 @@ curl "http://localhost:5001/api/students?department=CSE&year=3&search=aarav"
 {
   "success": true,
   "count": 1,
-  "data": [{ "_id": "672f1c2b8e1a4d4f9c0a12ab", "studentId": "MTA2023CS001", "...": "..." }]
+  "data": [{ "_id": "672f1c2b8e1a4d4f9c0a12ab", "studentId": "2023CS001", "...": "..." }]
 }
 ```
 
@@ -403,7 +409,7 @@ curl -X DELETE http://localhost:5001/api/students/672f1c2b8e1a4d4f9c0a12ab
 {
   "success": true,
   "message": "Student deleted successfully",
-  "data": { "_id": "672f1c2b8e1a4d4f9c0a12ab", "studentId": "MTA2023CS001", "...": "..." }
+  "data": { "_id": "672f1c2b8e1a4d4f9c0a12ab", "studentId": "2023CS001", "...": "..." }
 }
 ```
 
@@ -478,7 +484,7 @@ Against the deployed API, copy the Deployed environment, set `baseUrl`, and pass
 
 ## ✅ Testing Results
 
-Executed on this machine, against a local MongoDB database and the running API.
+Executed on this machine against a local MongoDB database and the running API, then repeated against the public Vercel deployment (see [Deployment verified](#5-deployment-verified-actual-results) for those results).
 
 **Endpoint and validation checks (curl):** 19 / 19 passed — create `201`, list/read `200`, invalid id `400`, unknown id `404`, missing fields `400`, bad email `400`, bad department `400`, duplicate email `400`, duplicate Student ID `400`, update `200`, invalid update `400`, update unknown id `404`, delete `200`, deleted read `404`, delete again `404`, health `200`, unknown route `404`, malformed JSON `400`.
 
@@ -581,7 +587,21 @@ curl https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api/
 curl https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api/students    # expect the seeded records
 ```
 
-Then open the dashboard URL, confirm the student count and table load from the public API, and run the Postman collection with the **Deployed** environment (`https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api`).
+### 5. Deployment verified (actual results)
+
+| Check | Result |
+| --- | --- |
+| `GET /api/health` on the public API | `200`, `"database":"connected"` |
+| Atlas network access | `0.0.0.0/0` (serverless functions use dynamic egress IPs) |
+| CORS preflight from the dashboard origin | `204` with `access-control-allow-origin: https://student-management-dashboard-...` |
+| CORS preflight from an unknown origin | `403` |
+| Dashboard in a browser | 10 records loaded from the public API, no console errors, page title and sidebar free of the college brand |
+| Postman collection · **Deployed** environment | **13 requests, 35 assertions, 0 failures** (average response 423 ms) |
+
+```bash
+npx newman run postman/MITAOE_Practical_06_Student_Management_API.postman_collection.json \
+  -e postman/MITAOE_Practical_06_Deployed.postman_environment.json
+```
 
 ---
 

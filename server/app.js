@@ -51,14 +51,23 @@ app.get("/", (_req, res) => {
   });
 });
 
-// Health check: useful for Render health checks and for the frontend.
-app.get("/api/health", (_req, res) => {
-  const databaseConnected = isDatabaseConnected();
+// Health check: reports whether the API can reach MongoDB. The connection is
+// opened here on purpose so a cold serverless instance reports the real state
+// instead of "disconnected" merely because no query has run yet.
+app.get("/api/health", async (_req, res) => {
+  let database = "disconnected";
+
+  try {
+    await connectDB();
+    if (isDatabaseConnected()) database = "connected";
+  } catch (error) {
+    console.error("Health check database error:", error.message);
+  }
 
   res.status(200).json({
     success: true,
     status: "ok",
-    database: databaseConnected ? "connected" : "disconnected",
+    database,
     uptime: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
   });
