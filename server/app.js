@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const studentRoutes = require("./routes/studentRoutes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
-const { isDatabaseConnected } = require("./config/db");
+const { connectDB, isDatabaseConnected } = require("./config/db");
 const { DEPARTMENTS } = require("./models/Student");
 const ApiError = require("./utils/ApiError");
 
@@ -75,7 +75,17 @@ app.get("/api/students/meta", (_req, res) => {
   });
 });
 
-app.use("/api/students", studentRoutes);
+// Ensure a database connection exists before serving data routes. On a
+// traditional server the connection is already open (server.js connects at
+// boot); on Vercel this reuses the cached connection of the warm instance.
+app.use("/api/students", async (_req, _res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+}, studentRoutes);
 
 // Unknown route -> 404 JSON
 app.use(notFound);
