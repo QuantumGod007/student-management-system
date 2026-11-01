@@ -1,0 +1,86 @@
+const express = require("express");
+const cors = require("cors");
+
+const studentRoutes = require("./routes/studentRoutes");
+const { errorHandler, notFound } = require("./middleware/errorHandler");
+const { isDatabaseConnected } = require("./config/db");
+const { DEPARTMENTS } = require("./models/Student");
+const ApiError = require("./utils/ApiError");
+
+const app = express();
+
+/**
+ * CORS: browser clients may only call the API from the origins listed in
+ * CLIENT_ORIGIN (comma separated). Requests without an Origin header
+ * (Postman, curl, server-to-server) are always allowed.
+ */
+const allowedOrigins = (process.env.CLIENT_ORIGIN || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      return callback(ApiError.forbidden(`Origin ${origin} is not allowed`));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Accept"],
+  })
+);
+
+app.use(express.json({ limit: "100kb" }));
+
+// Trust the proxy headers of hosting providers (Render, etc.)
+app.set("trust proxy", true);
+
+// Service root
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Student Management System API is running",
+    version: "1.0.0",
+    endpoints: {
+      health: "/api/health",
+      students: "/api/students",
+    },
+  });
+});
+
+// Health check: useful for Render health checks and for the frontend.
+app.get("/api/health", (_req, res) => {
+  const databaseConnected = isDatabaseConnected();
+
+  res.status(200).json({
+    success: true,
+    status: "ok",
+    database: databaseConnected ? "connected" : "disconnected",
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// API metadata (departments are needed by the frontend and by clients).
+app.get("/api/students/meta", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      departments: DEPARTMENTS,
+      years: [1, 2, 3, 4],
+    },
+  });
+});
+
+app.use("/api/students", studentRoutes);
+
+// Unknown route -> 404 JSON
+app.use(notFound);
+
+// Central error handler must be registered last.
+app.use(errorHandler);
+
+module.exports = app;

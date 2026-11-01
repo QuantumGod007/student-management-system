@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment files (never commit credentials)
+.env
+.env.*
+!.env.example
+*.env
+client/.env
+server/.env
+
+# Build output
+dist/
+client/dist/
+
+# Local MongoDB data used for development/testing
+.mongodb-data/
+
+# Logs and runtime artifacts
+*.log
+server-dev.log
+client-dev.log
+server.pid
+
+# Operating system
+.DS_Store
