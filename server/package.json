@@ -1,7 +1,7 @@
 {
   "name": "student-management-api",
   "version": "1.0.0",
-  "description": "Student Management REST API for MITAOE Web Technology Practical 06",
+  "description": "Student Management REST API (Express + MongoDB)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

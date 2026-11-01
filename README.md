@@ -311,7 +311,7 @@ curl -X POST http://localhost:5001/api/students \
   -d '{
     "studentId": "MTA2023CS001",
     "name": "Aarav Patil",
-    "email": "aarav.patil@mitaoe.ac.in",
+    "email": "aarav.patil@example.edu",
     "phone": "9876543210",
     "department": "CSE",
     "year": 3,
@@ -329,7 +329,7 @@ curl -X POST http://localhost:5001/api/students \
     "_id": "672f1c2b8e1a4d4f9c0a12ab",
     "studentId": "MTA2023CS001",
     "name": "Aarav Patil",
-    "email": "aarav.patil@mitaoe.ac.in",
+    "email": "aarav.patil@example.edu",
     "phone": "9876543210",
     "department": "CSE",
     "year": 3,
@@ -386,7 +386,7 @@ Malformed id → `400 Bad Request`:
 ```bash
 curl -X PUT http://localhost:5001/api/students/672f1c2b8e1a4d4f9c0a12ab \
   -H "Content-Type: application/json" \
-  -d '{ "name": "Aarav S Patil", "email": "aarav.patil@mitaoe.ac.in", "phone": "9876501234", "department": "IT", "year": 4, "division": "B" }'
+  -d '{ "name": "Aarav S Patil", "email": "aarav.patil@example.edu", "phone": "9876501234", "department": "IT", "year": 4, "division": "B" }'
 ```
 
 `200 OK` → `{ "success": true, "message": "Student updated successfully", "data": { ... } }`
@@ -535,8 +535,10 @@ Both halves of the project are deployed to **Vercel** as two separate projects, 
 
 | Part | Vercel project | Root directory | URL |
 | --- | --- | --- | --- |
-| REST API (Express) | `mitaoe-student-api` | `server` | https://mitaoe-student-api.vercel.app |
-| Dashboard (React + Vite) | `mitaoe-student-client` | `client` | https://mitaoe-student-client.vercel.app |
+| REST API (Express) | `student-management-api` | `server` | https://student-management-api-anvith320-gmailcoms-projects.vercel.app |
+| Dashboard (React + Vite) | `student-management-dashboard` | `client` | https://student-management-dashboard-anvith320-gmailcoms-projects.vercel.app |
+
+> The generated URLs include the account suffix (`-anvith320-gmailcoms-projects`) because the plain `student-management-api.vercel.app` / `student-management-dashboard.vercel.app` hostnames are already taken by other Vercel accounts. Deployment Protection (Vercel Authentication) is disabled for both projects so the URLs are publicly reachable.
 
 ### 1. MongoDB Atlas
 
@@ -552,9 +554,9 @@ mongodb+srv://<user>:<password>@<cluster>.mongodb.net/student_management?retryWr
 
 ```bash
 cd server
-vercel link --project mitaoe-student-api
+vercel link --project student-management-api
 printf '%s' '<atlas-connection-string>' | vercel env add MONGO_URI production
-printf '%s' 'https://mitaoe-student-client.vercel.app' | vercel env add CLIENT_ORIGIN production
+printf '%s' 'https://student-management-dashboard-anvith320-gmailcoms-projects.vercel.app' | vercel env add CLIENT_ORIGIN production
 printf '%s' 'production' | vercel env add NODE_ENV production
 vercel deploy --prod
 ```
@@ -567,19 +569,19 @@ Vercel auto-detects Vite (build `npm run build`, output `dist`). The API base is
 
 ```bash
 cd client
-vercel link --project mitaoe-student-client
-printf '%s' 'https://mitaoe-student-api.vercel.app/api' | vercel env add VITE_API_URL production
+vercel link --project student-management-dashboard
+printf '%s' 'https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api' | vercel env add VITE_API_URL production
 vercel deploy --prod
 ```
 
 ### 4. Verify the deployment
 
 ```bash
-curl https://mitaoe-student-api.vercel.app/api/health      # expect "database":"connected"
-curl https://mitaoe-student-api.vercel.app/api/students    # expect the seeded records
+curl https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api/health      # expect "database":"connected"
+curl https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api/students    # expect the seeded records
 ```
 
-Then open the dashboard URL, confirm the student count and table load from the public API, and run the Postman collection with the **Deployed** environment (`https://mitaoe-student-api.vercel.app/api`).
+Then open the dashboard URL, confirm the student count and table load from the public API, and run the Postman collection with the **Deployed** environment (`https://student-management-api-anvith320-gmailcoms-projects.vercel.app/api`).
 
 ---
 

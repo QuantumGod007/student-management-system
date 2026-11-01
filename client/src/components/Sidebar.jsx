@@ -30,7 +30,7 @@ function Sidebar({ activeItem = "dashboard", onNavigate, onAddStudent }) {
 
         <div>
           <h2>StudentHub</h2>
-          <p>MITAOE Administration</p>
+          <p>Administration Portal</p>
         </div>
       </div>
 
@@ -55,8 +55,8 @@ function Sidebar({ activeItem = "dashboard", onNavigate, onAddStudent }) {
       </nav>
 
       <div className="sidebar-footer">
-        <strong>MITAOE</strong>
-        <span>Student Administration</span>
+        <strong>Administration</strong>
+        <span>Student Records</span>
       </div>
     </aside>
   );
