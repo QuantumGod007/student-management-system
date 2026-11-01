@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const studentRoutes = require("./routes/studentRoutes");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
-const { connectDB, isDatabaseConnected } = require("./config/db");
+const { connectDB, pingDatabase } = require("./config/db");
 const { DEPARTMENTS } = require("./models/Student");
 const ApiError = require("./utils/ApiError");
 
@@ -58,8 +58,8 @@ app.get("/api/health", async (_req, res) => {
   let database = "disconnected";
 
   try {
-    await connectDB();
-    if (isDatabaseConnected()) database = "connected";
+    await pingDatabase();
+    database = "connected";
   } catch (error) {
     console.error("Health check database error:", error.message);
   }

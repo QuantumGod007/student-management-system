@@ -60,6 +60,21 @@ const disconnectDB = async () => {
  */
 const isDatabaseConnected = () => mongoose.connection.readyState === 1;
 
+/**
+ * Actively checks the database instead of trusting readyState, which can lag
+ * behind on a warm serverless instance whose socket was dropped. Throws when
+ * the ping fails so callers can report the real state.
+ */
+const pingDatabase = async () => {
+  await connectDB();
+
+  if (!mongoose.connection.db) {
+    throw new Error("Database connection is not ready");
+  }
+
+  await mongoose.connection.db.admin().ping();
+};
+
 mongoose.connection.on("error", (error) => {
   console.error("MongoDB connection error:", error.message);
 });
@@ -68,4 +83,4 @@ mongoose.connection.on("disconnected", () => {
   console.warn("MongoDB disconnected");
 });
 
-module.exports = { connectDB, disconnectDB, isDatabaseConnected };
+module.exports = { connectDB, disconnectDB, isDatabaseConnected, pingDatabase };
