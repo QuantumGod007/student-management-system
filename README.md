@@ -54,7 +54,7 @@ The project exposes a complete **RESTful CRUD API** for student records, with a 
 | Backend | Node.js (≥ 18), Express 5, Mongoose 9, CORS, dotenv |
 | Database | MongoDB / MongoDB Atlas |
 | API testing | Postman collection + Newman |
-| Deployment target | Render (backend web service + static frontend) |
+| Deployment target | Vercel (API Function + static frontend) with MongoDB Atlas |
 
 ---
 
@@ -149,7 +149,7 @@ Copy `server/.env.example` to `server/.env`:
 | Variable | Required | Description |
 | --- | --- | --- |
 | `MONGO_URI` | ✅ | MongoDB connection string (local or Atlas) |
-| `PORT` | optional | HTTP port, defaults to `5001`. Render injects its own port automatically. |
+| `PORT` | optional | HTTP port, defaults to `5001`. Hosting platforms inject their own port; Vercel Functions ignore it. |
 | `NODE_ENV` | optional | `development` or `production` |
 | `CLIENT_ORIGIN` | recommended | Comma-separated allowed browser origins, e.g. `http://localhost:5173,https://your-frontend.onrender.com`. Empty means "allow any origin" (development only). |
 | `HOST` | optional | Bind address, defaults to `0.0.0.0` |
@@ -190,7 +190,7 @@ Connection string: `mongodb://127.0.0.1:27017/student_management`
 ### Option B — MongoDB Atlas (used in production)
 
 1. Create a free cluster at <https://www.mongodb.com/atlas>.
-2. Create a database user and allow network access (`0.0.0.0/0` for Render, or Render's egress IPs).
+2. Create a database user and allow network access (`0.0.0.0/0` — serverless platforms such as Vercel use dynamic egress IPs).
 3. Copy the connection string, add the database name, and set it as `MONGO_URI`:
 
 ```text
@@ -529,53 +529,63 @@ Captured from the running application.
 
 ---
 
-## 🚀 Deployment
+## 🚀 Deployment (Vercel)
 
-The project is prepared for **Render** (the platform this repository already targeted): the API is a Node web service, the dashboard is a static site, and MongoDB Atlas provides the database.
+Both halves of the project are deployed to **Vercel** as two separate projects, with **MongoDB Atlas** as the database.
+
+| Part | Vercel project | Root directory | URL |
+| --- | --- | --- | --- |
+| REST API (Express) | `mitaoe-student-api` | `server` | https://mitaoe-student-api.vercel.app |
+| Dashboard (React + Vite) | `mitaoe-student-client` | `client` | https://mitaoe-student-client.vercel.app |
 
 ### 1. MongoDB Atlas
 
-Create the cluster and database user, allow Render's connections, and note the connection string. Add the database name before the `?` options.
-
-### 2. Backend on Render
-
-- **New → Web Service**, connect the repository.
-- **Root Directory:** `server`
-- **Build Command:** `npm install`
-- **Start Command:** `npm start`
-- **Environment variables:**
+Create a free cluster, add a database user, allow network access with `0.0.0.0/0` (Vercel Functions use dynamic egress IPs), and copy the connection string with the database name added:
 
 ```text
-MONGO_URI     = mongodb+srv://.../student_management?retryWrites=true&w=majority
-NODE_ENV      = production
-CLIENT_ORIGIN = https://<your-frontend>.onrender.com
+mongodb+srv://<user>:<password>@<cluster>.mongodb.net/student_management?retryWrites=true&w=majority
 ```
 
-`server.js` listens on `process.env.PORT` (assigned by Render) and binds `0.0.0.0`, so no port configuration is needed. Do **not** set `PORT` manually.
+### 2. Backend — Vercel
 
-### 3. Frontend on Render
-
-- **New → Static Site**, same repository.
-- **Root Directory:** `client`
-- **Build Command:** `npm install && npm run build`
-- **Publish Directory:** `dist`
-- **Environment variable:**
-
-```text
-VITE_API_URL = https://<your-api-service>.onrender.com/api
-```
-
-- **Rewrite rule:** `/*` → `/index.html` (single-page app).
-
-### 4. Verify
+`server/vercel.json` routes every request to `server.js`, which exports the Express app and lets Vercel run it as a single Function. `server.js` only calls `app.listen()` when it is **not** running on Vercel, and the MongoDB connection is cached per warm instance (`server/config/db.js`), so requests do not open a new pool each time.
 
 ```bash
-curl https://<your-api-service>.onrender.com/api/health
+cd server
+vercel link --project mitaoe-student-api
+printf '%s' '<atlas-connection-string>' | vercel env add MONGO_URI production
+printf '%s' 'https://mitaoe-student-client.vercel.app' | vercel env add CLIENT_ORIGIN production
+printf '%s' 'production' | vercel env add NODE_ENV production
+vercel deploy --prod
 ```
 
-Then run the Postman collection with the **Deployed** environment, and open the frontend URL to confirm the dashboard loads data from the public API.
+Do **not** set `PORT` on Vercel and do **not** commit the connection string.
 
-> **What is and is not done:** the code, scripts and configuration needed for deployment are in place, but no deployment was performed or verified as part of this work. Do not present a URL as "tested" until the steps above have been run and the health endpoint plus Postman collection succeed against that URL.
+### 3. Frontend — Vercel
+
+Vercel auto-detects Vite (build `npm run build`, output `dist`). The API base is compiled in at build time, so it must be set before deploying:
+
+```bash
+cd client
+vercel link --project mitaoe-student-client
+printf '%s' 'https://mitaoe-student-api.vercel.app/api' | vercel env add VITE_API_URL production
+vercel deploy --prod
+```
+
+### 4. Verify the deployment
+
+```bash
+curl https://mitaoe-student-api.vercel.app/api/health      # expect "database":"connected"
+curl https://mitaoe-student-api.vercel.app/api/students    # expect the seeded records
+```
+
+Then open the dashboard URL, confirm the student count and table load from the public API, and run the Postman collection with the **Deployed** environment (`https://mitaoe-student-api.vercel.app/api`).
+
+---
+
+## 🔁 Continuous deployment from GitHub
+
+Both Vercel projects can redeploy on every push. In the Vercel dashboard open each project → **Settings → Git** → connect the repository and set the **Root Directory** (`server` or `client`). After that, `git push` to `main` ships the change.
 
 ---
 

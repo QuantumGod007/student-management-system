@@ -11,6 +11,9 @@ server/node_modules/
 client/.env
 server/.env
 
+# Vercel CLI state
+.vercel/
+
 # Build output
 dist/
 client/dist/

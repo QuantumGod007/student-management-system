@@ -48,4 +48,11 @@ process.on("unhandledRejection", (reason) => {
   console.error("Unhandled rejection:", reason);
 });
 
-startServer();
+// On Vercel the file is imported as a serverless handler: export the Express
+// app instead of binding a port. The database connection is opened lazily by
+// the middleware in app.js and reused across warm invocations.
+module.exports = app;
+
+if (!process.env.VERCEL) {
+  startServer();
+}
